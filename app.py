@@ -94,10 +94,31 @@ def lista_presenca(alunos):
     st.progress(porcentagem / 100)
     st.success(f"**Porcentagem de presença:** {porcentagem:.2f}%")
     
+    # Criar uma cópia formatada do DataFrame
+    df_download = tabela_editada.copy()
+    df_download["PRESENTE"] = df_download["PRESENTE"].apply(lambda x: "Sim" if x else "Não")
+    df_download = df_download[["ID", "PRESENTE", "NOME", "RG", "TURMA"]]
+
+
+    # Calcular estatísticas
+    total = len(df_download)
+    presentes = sum(df_download["PRESENTE"] == "Sim")
+    porcentagem = (presentes / total * 100) if total > 0 else 0
+
+    # Adicionar linha de resumo ao final
+    resumo = pd.DataFrame([{
+        "ID": "Resumo",
+        "NOME": "",
+        "RG": "",
+        "TURMA": "",
+        "PRESENTE": f"{presentes}/{total} ({porcentagem:.2f}%)"
+    }])
+    df_final = pd.concat([df_download, resumo], ignore_index=True)
+
     # Converter DataFrame para Excel em memória
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        tabela_editada.to_excel(writer, index=False, sheet_name="Presenca")
+        df_final.to_excel(writer, index=False, sheet_name="Presenca")
 
     # Botão para baixar
     st.download_button(
@@ -106,6 +127,7 @@ def lista_presenca(alunos):
         file_name=f"presenca_{date.today().isoformat()}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 # 🔹 Chamada da função
 ger = GerenciadorAlunos()
 alunos = ger.listar()

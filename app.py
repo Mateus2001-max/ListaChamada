@@ -19,10 +19,10 @@ def lista_presenca(alunos):
     for i, aluno in enumerate(alunos, start=1):
         dados.append({
             "ID": i,
+            "PRESENTE": bool(presencas.get(aluno.id, 0)),
             "NOME": aluno.nome,
             "RG": aluno.rg,
-            "TURMA": aluno.turma,
-            "PRESENTE": bool(presencas.get(aluno.id, 0))
+            "TURMA": aluno.turma
         })
 
     df = pd.DataFrame(dados)

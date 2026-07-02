@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import io
 from datetime import date
 from Crud.GerenciadorAlunos import GerenciadorAlunos
 
@@ -92,7 +93,19 @@ def lista_presenca(alunos):
     st.write(f"**Presentes:** {presentes}")
     st.progress(porcentagem / 100)
     st.success(f"**Porcentagem de presença:** {porcentagem:.2f}%")
+    
+    # Converter DataFrame para Excel em memória
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        tabela_editada.to_excel(writer, index=False, sheet_name="Presenca")
 
+    # Botão para baixar
+    st.download_button(
+        label="📥 Baixar presença de hoje",
+        data=buffer.getvalue(),
+        file_name=f"presenca_{date.today().isoformat()}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 # 🔹 Chamada da função
 ger = GerenciadorAlunos()
 alunos = ger.listar()
@@ -101,3 +114,4 @@ if alunos:
     lista_presenca(alunos)
 else:
     st.warning("Nenhum aluno cadastrado no banco de dados.")
+

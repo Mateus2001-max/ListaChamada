@@ -2,8 +2,15 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import io
-from datetime import date
+import os
+from datetime import date, timedelta
 from Crud.GerenciadorAlunos import GerenciadorAlunos
+from openpyxl.styles import Alignment, Border, Side, Font
+from openpyxl.utils import get_column_letter
+from openpyxl.drawing.image import Image
+from menu import gerar_relatorio_historico
+
+
 
 def lista_presenca(alunos):
     st.title("📋 Lista de Presença")
@@ -15,42 +22,37 @@ def lista_presenca(alunos):
     presencas = dict(cursor.fetchall())
     conn.close()
 
-    # 🔹 Montar DataFrame com checkbox editável
+    # Montar DataFrame
     dados = []
     for i, aluno in enumerate(alunos, start=1):
         dados.append({
             "ID": i,
             "PRESENTE": bool(presencas.get(aluno.id, 0)),
             "NOME": aluno.nome,
-            "RG": aluno.rg,
-            "TURMA": aluno.turma
+            "CIM Nº": aluno.rg,
+            "GRAU": aluno.turma
         })
-
     df = pd.DataFrame(dados)
 
-    # 🔹 Editor interativo
-    st.write("Edite os dados ou marque presença diretamente na tabela:")
+    # Editor interativo
     tabela_editada = st.data_editor(
         df,
         width="stretch",
         height=600,
-        num_rows="dynamic",  # permite adicionar novas linhas
+        num_rows="dynamic",
         key="tabela_presenca"
     )
-
     # 🔹 Botão para salvar alterações
     if st.button("💾 Salvar Alterações"):
         conn = sqlite3.connect("escola.db")
         cursor = conn.cursor()
         for _, linha in tabela_editada.iterrows():
-            # Atualiza ou insere aluno usando ID como chave
             cursor.execute("""
                 INSERT INTO alunos (id, nome, rg, turma)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET nome=excluded.nome, rg=excluded.rg, turma=excluded.turma
-            """, (linha["ID"], linha["NOME"], linha["RG"], linha["TURMA"]))
+            """, (linha["ID"], linha["NOME"], linha["CIM Nº"], linha["GRAU"]))
 
-            # Atualiza presença
             presente = 1 if linha["PRESENTE"] else 0
             cursor.execute("""
                 INSERT INTO presencas (aluno_id, data, presente)
@@ -61,64 +63,95 @@ def lista_presenca(alunos):
         conn.close()
         st.success("✅ Alterações salvas com sucesso!")
 
-    # Botão para excluir alunos removidos da tabela
+    # 🔹 Botão para excluir alunos removidos
     if st.button("🗑️ Remover alunos excluídos"):
         conn = sqlite3.connect("escola.db")
         cursor = conn.cursor()
-
-        # Pegar IDs atuais da tabela editada
         ids_atuais = set(tabela_editada["ID"].dropna().astype(int))
-
-        # Buscar todos os IDs existentes no banco
         cursor.execute("SELECT id FROM alunos")
         ids_banco = set(row[0] for row in cursor.fetchall())
-
-        # Descobrir quais foram removidos
         ids_removidos = ids_banco - ids_atuais
-
-        # Excluir do banco
         for id_removido in ids_removidos:
             cursor.execute("DELETE FROM alunos WHERE id=?", (id_removido,))
-
         conn.commit()
         conn.close()
         st.success("✅ Alunos removidos do banco com sucesso!")
         st.rerun()
-    # 🔹 Estatísticas
+
+    # Estatísticas
     total = len(tabela_editada)
     presentes = sum(bool(x) for x in tabela_editada["PRESENTE"])
-    porcentagem = (presentes / total) * 100 if total > 0 else 0
+    porcentagem = (presentes / total * 100) if total > 0 else 0
 
     st.write(f"**Total de alunos:** {total}")
     st.write(f"**Presentes:** {presentes}")
     st.progress(porcentagem / 100)
     st.success(f"**Porcentagem de presença:** {porcentagem:.2f}%")
-    
-    # Criar uma cópia formatada do DataFrame
+
+    # Criar DataFrame para download
     df_download = tabela_editada.copy()
     df_download["PRESENTE"] = df_download["PRESENTE"].apply(lambda x: "Sim" if x else "Não")
-    df_download = df_download[["ID", "PRESENTE", "NOME", "RG", "TURMA"]]
+    df_download = df_download[["ID", "PRESENTE", "NOME", "CIM Nº", "GRAU"]]
 
-
-    # Calcular estatísticas
-    total = len(df_download)
-    presentes = sum(df_download["PRESENTE"] == "Sim")
-    porcentagem = (presentes / total * 100) if total > 0 else 0
-
-    # Adicionar linha de resumo ao final
+    # Linha de resumo
     resumo = pd.DataFrame([{
-        "ID": "Resumo",
-        "NOME": "",
-        "RG": "",
-        "TURMA": "",
-        "PRESENTE": f"{presentes}/{total} ({porcentagem:.2f}%)"
+        "ID": "",
+        "PRESENTE": f"{presentes}/{total} ({porcentagem:.2f}%)",
+        "NOME": "Resumo",
+        "CIM Nº": "",
+        "GRAU": ""
     }])
     df_final = pd.concat([df_download, resumo], ignore_index=True)
 
-    # Converter DataFrame para Excel em memória
+    # Converter para Excel em memória com formatação e cabeçalho
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        df_final.to_excel(writer, index=False, sheet_name="Presenca")
+        df_final.to_excel(writer, index=False, sheet_name="Presenca", startrow=6)
+        ws = writer.book["Presenca"]
+
+        # Inserir logotipo (ajuste o nome do arquivo conforme sua pasta)
+        logo = Image("logo.png")
+        logo.width = 120
+        logo.height = 120
+        ws.add_image(logo, "A1")
+
+        # Cabeçalho de texto
+        ws.merge_cells("C1:E1")
+        ws.merge_cells("C2:E2")
+        ws.merge_cells("C3:E3")
+        ws.merge_cells("C4:E4")
+        
+
+        ws["C1"] = "A...G...D...G...A...D...U..."
+        ws["C2"] = "ESP... LOJ... SIMB... TERCEIRO MILÊNIO Nº 2.825"
+        ws["C3"] = "∴A∴A∴A∴ REUNIÕES 5.ª FEIRA ÀS 19:30 H."
+        ws["C4"] = "FEDERADA AO G∴O∴B∴ E JURISDICIONADA AO G∴O∴B∴M∴S∴"
+        ws["C6"] = f"Data: {date.today().strftime('%d/%m/%Y')}"
+        ws["C6"].alignment = Alignment(horizontal="center", vertical="center")
+        ws["C6"].font = Font(bold=True, size=11)
+        
+        for row in range(1, 5):
+            cell = ws[f"C{row}"]
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.font = Font(bold=True, size=12)
+
+        # Bordas finas
+        thin_border = Border(left=Side(style="thin"), right=Side(style="thin"),
+                             top=Side(style="thin"), bottom=Side(style="thin"))
+
+        for row in ws.iter_rows(min_row=7, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Ajustar largura automática
+        for col in ws.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = max_length + 2
 
     # Botão para baixar
     st.download_button(
@@ -128,7 +161,17 @@ def lista_presenca(alunos):
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# 🔹 Chamada da função
+# 🔹 Chamada automática ao iniciar o app
+ontem = (date.today() - timedelta(days=1)).isoformat()
+arquivo_excel = f"Relatorios/presenca_{ontem}.xlsx"
+
+if not os.path.exists(arquivo_excel):
+    gerar_relatorio_historico()
+    st.info(f"📂 Relatório histórico de ontem criado: {arquivo_excel}")
+else:
+    st.info(f"📂 Relatório histórico de ontem já existe: {arquivo_excel}")
+    
+# Chamada da função
 ger = GerenciadorAlunos()
 alunos = ger.listar()
 

@@ -167,9 +167,11 @@ arquivo_excel = f"Relatorios/presenca_{ontem}.xlsx"
 
 if not os.path.exists(arquivo_excel):
     gerar_relatorio_historico()
-    st.info(f"📂 Relatório histórico de ontem criado: {arquivo_excel}")
+    #st.info(f"📂")
+    st.info(f"📂")
 else:
-    st.info(f"📂 Relatório histórico de ontem já existe: {arquivo_excel}")
+    #st.info(f"📂 Relatório histórico de ontem já existe: {arquivo_excel}")
+    st.info(f"📂")
     
 # Chamada da função
 ger = GerenciadorAlunos()

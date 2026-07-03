@@ -71,6 +71,7 @@ def exibir_menu():
             alunos = ger.listar()
             if alunos:
                 #abrir_lista_presenca(alunos)
+                print("Função de lista de presença via Tkinter desativada no servidor.")
             else:
                 print("Nenhum aluno cadastrado.")
 

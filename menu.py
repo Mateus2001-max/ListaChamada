@@ -7,6 +7,9 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import os
 import pandas as pd
+from openpyxl.drawing.image import Image
+from openpyxl.styles import Alignment, Border, Side, Font
+from openpyxl.utils import get_column_letter
 import sqlite3
 from datetime import date, timedelta
 def exibir_menu():
@@ -99,36 +102,80 @@ def gerar_relatorio_historico():
     presencas = dict(cursor.fetchall())
     conn.close()
 
-    # Montar DataFrame com presença
+    # Montar DataFrame
     dados = []
     for i, aluno in enumerate(alunos, start=1):
         dados.append({
-            "Nº": i,
+            "ID": i,
+            "PRESENTE": "Sim" if presencas.get(aluno.id, 0) == 1 else "Não",
             "NOME": aluno.nome,
-            "RG": aluno.rg,
-            "TURMA": aluno.turma,
-            "PRESENTE": "Sim" if presencas.get(aluno.id, 0) == 1 else "Não"
+            "CIM Nº": aluno.rg,
+            "GRAU": aluno.turma
         })
-
     df = pd.DataFrame(dados)
 
-    # 🔹 Calcular estatísticas
+    # Estatísticas
     total = len(df)
     presentes = sum(df["PRESENTE"] == "Sim")
     porcentagem = (presentes / total * 100) if total > 0 else 0
 
-    # 🔹 Adicionar linha extra com resumo
     resumo = pd.DataFrame([{
-        "Nº": "",
+        "ID": "",
+        "PRESENTE": f"{presentes}/{total} ({porcentagem:.2f}%)",
         "NOME": "Resumo",
-        "RG": "",
-        "TURMA": "",
-        "PRESENTE": f"{presentes}/{total} ({porcentagem:.2f}%)"
+        "CIM Nº": "",
+        "GRAU": ""
     }])
-
     df_final = pd.concat([df, resumo], ignore_index=True)
 
-    # Salvar no Excel
-    df_final.to_excel(arquivo_excel, index=False)
+    # Criar Excel com formatação e cabeçalho
+    with pd.ExcelWriter(arquivo_excel, engine="openpyxl") as writer:
+        df_final.to_excel(writer, index=False, sheet_name="Presenca", startrow=6)
+        ws = writer.book["Presenca"]
+
+        # Inserir logotipo
+        logo = Image("logo.png")
+        logo.width = 120
+        logo.height = 120
+        ws.add_image(logo, "A1")
+
+        # Cabeçalho de texto
+        ws.merge_cells("C1:E1")
+        ws.merge_cells("C2:E2")
+        ws.merge_cells("C3:E3")
+        ws.merge_cells("C4:E4")
+
+        ws["C1"] = "A...G...D...G...A...D...U..."
+        ws["C2"] = "ESP... LOJ... SIMB... TERCEIRO MILÊNIO Nº 2.825"
+        ws["C3"] = "∴A∴A∴A∴ REUNIÕES 5.ª FEIRA ÀS 19:30 H."
+        ws["C4"] = "FEDERADA AO G∴O∴B∴ E JURISDICIONADA AO G∴O∴B∴M∴S∴"
+        ws["C6"] = f"Data: {ontem}"
+        ws["C6"].alignment = Alignment(horizontal="center", vertical="center")
+        ws["C6"].font = Font(bold=True, size=11)
+
+        for row in range(1, 5):
+            cell = ws[f"C{row}"]
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.font = Font(bold=True, size=12)
+
+        # Bordas finas
+        thin_border = Border(left=Side(style="thin"), right=Side(style="thin"),
+                             top=Side(style="thin"), bottom=Side(style="thin"))
+
+        for row in ws.iter_rows(min_row=7, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+            for cell in row:
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Ajustar largura automática
+        for col in ws.columns:
+            max_length = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = max_length + 2
 
     print(f"✅ Relatório histórico criado: {arquivo_excel}")
+
+

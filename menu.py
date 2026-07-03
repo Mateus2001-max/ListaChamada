@@ -1,5 +1,5 @@
 from Crud.GerenciadorAlunos import GerenciadorAlunos
-from Interface.Interface_tkinter import  abrir_lista_presenca
+#from Interface.Interface_tkinter import  abrir_lista_presenca
 from datetime import datetime
 from docx import Document
 from docx.shared import Pt
@@ -70,7 +70,7 @@ def exibir_menu():
         elif opcao == "5":
             alunos = ger.listar()
             if alunos:
-                abrir_lista_presenca(alunos)
+                #abrir_lista_presenca(alunos)
             else:
                 print("Nenhum aluno cadastrado.")
 

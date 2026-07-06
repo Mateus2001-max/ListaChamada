@@ -12,7 +12,6 @@ from openpyxl.styles import Alignment, Border, Side, Font
 from openpyxl.utils import get_column_letter
 import sqlite3
 from datetime import date, timedelta
-from Drive.drive_utils import upload_to_drive 
 def exibir_menu():
     gerar_relatorio_historico()
     
@@ -179,7 +178,6 @@ def gerar_relatorio_historico():
             ws.column_dimensions[col_letter].width = max_length + 2
 
     print(f"✅ Relatório histórico criado: {arquivo_excel}")
-    upload_to_drive(arquivo_excel, "1vpidseKL_aSVU8hfqZwb_kq9JjT9CCPr")
 
 
 

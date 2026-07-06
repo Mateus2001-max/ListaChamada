@@ -1,5 +1,5 @@
 from Crud.GerenciadorAlunos import GerenciadorAlunos
-#from Interface.Interface_tkinter import  abrir_lista_presenca
+from Interface.Interface_tkinter import  abrir_lista_presenca
 from datetime import datetime
 from docx import Document
 from docx.shared import Pt
@@ -12,6 +12,7 @@ from openpyxl.styles import Alignment, Border, Side, Font
 from openpyxl.utils import get_column_letter
 import sqlite3
 from datetime import date, timedelta
+from Drive.drive_utils import upload_to_drive 
 def exibir_menu():
     gerar_relatorio_historico()
     
@@ -70,8 +71,7 @@ def exibir_menu():
         elif opcao == "5":
             alunos = ger.listar()
             if alunos:
-                #abrir_lista_presenca(alunos)
-                print("Função de lista de presença via Tkinter desativada no servidor.")
+                abrir_lista_presenca(alunos)
             else:
                 print("Nenhum aluno cadastrado.")
 
@@ -178,5 +178,7 @@ def gerar_relatorio_historico():
             ws.column_dimensions[col_letter].width = max_length + 2
 
     print(f"✅ Relatório histórico criado: {arquivo_excel}")
+    upload_to_drive(arquivo_excel, "1vpidseKL_aSVU8hfqZwb_kq9JjT9CCPr")
+
 
 

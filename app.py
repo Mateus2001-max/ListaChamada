@@ -18,11 +18,20 @@ FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
     gauth = GoogleAuth()
+
+    # carrega secrets
     client_secrets = json.loads(st.secrets["CLIENT_SECRETS"])
     mycreds = json.loads(st.secrets["MYCREDS"])
 
-    gauth.settings['client_config_backend'] = 'settings'
-    gauth.settings['client_config'] = client_secrets
+    # PyDrive2 espera essa estrutura
+    gauth.settings.update({
+        "client_config_backend": "settings",
+        "client_config": client_secrets,
+        "save_credentials": False,
+        "oauth_scope": ["https://www.googleapis.com/auth/drive"]
+    })
+
+    # aplica credenciais já salvas
     gauth.credentials = gauth.LoadCredentials(mycreds)
 
     return GoogleDrive(gauth)

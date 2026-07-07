@@ -201,4 +201,19 @@ caminho_local = f"Relatorios/{arquivo_excel}"
 if not os.path.exists(caminho_local):
     gerar_relatorio_historico()
     upload_to_drive(caminho_local)
-    st.success(f"📂 Relatório
+    st.success(f"📂 Relatório de ontem criado e enviado para o Google Drive: {arquivo_excel}")
+else:
+    if arquivo_existe_no_drive(arquivo_excel):
+        st.info(f"📂 Relatório de ontem já está no Google Drive: {arquivo_excel}")
+    else:
+        upload_to_drive(caminho_local)
+        st.success(f"📂 Relatório de ontem enviado para o Google Drive: {arquivo_excel}")
+
+# Chamada da função
+ger = GerenciadorAlunos()
+alunos = ger.listar()
+
+if alunos:
+    lista_presenca(alunos)
+else:
+    st.warning("Nenhum aluno cadastrado no banco de dados.")

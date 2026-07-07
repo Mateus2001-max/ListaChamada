@@ -24,7 +24,7 @@ def autenticar_drive():
 
     gauth.settings.update({
         "client_config_backend": "settings",
-        "client_config": client_secrets,   # agora sem "installed"
+        "client_config": client_secrets,   # já está no formato certo
         "oauth_scope": ["https://www.googleapis.com/auth/drive"],
         "save_credentials": False
     })

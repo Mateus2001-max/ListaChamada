@@ -23,18 +23,19 @@ def autenticar_drive():
     client_secrets = json.loads(st.secrets["CLIENT_SECRETS"])
     mycreds = json.loads(st.secrets["MYCREDS"])
 
-    # PyDrive2 espera essa estrutura
+    # monta estrutura que o PyDrive2 espera
     gauth.settings.update({
         "client_config_backend": "settings",
-        "client_config": client_secrets,
-        "save_credentials": False,
-        "oauth_scope": ["https://www.googleapis.com/auth/drive"]
+        "client_config": client_secrets["installed"],  # pega só o bloco "installed"
+        "oauth_scope": ["https://www.googleapis.com/auth/drive"],
+        "save_credentials": False
     })
 
     # aplica credenciais já salvas
     gauth.credentials = gauth.LoadCredentials(mycreds)
 
     return GoogleDrive(gauth)
+
 
 def upload_to_drive(file_path, folder_id=FOLDER_ID):
     drive = autenticar_drive()

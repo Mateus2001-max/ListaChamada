@@ -11,6 +11,7 @@ from openpyxl.drawing.image import Image
 from menu import gerar_relatorio_historico
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
+from pydrive2.auth import ServiceAccountCredentials
 from oauth2client.client import OAuth2Credentials
 import json
 
@@ -18,22 +19,11 @@ import json
 FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
-    gauth = GoogleAuth()
-
-    client_secrets = json.loads(st.secrets["CLIENT_SECRETS"])
-    mycreds = json.loads(st.secrets["MYCREDS"])
-
-    gauth.settings.update({
-        "client_config_backend": "settings",
-        "client_config": client_secrets,
-        "oauth_scope": ["https://www.googleapis.com/auth/drive"],
-        "save_credentials": False
-    })
-
-    # cria credenciais diretamente do JSON
-    gauth.credentials = OAuth2Credentials.from_json(json.dumps(mycreds))
-
-    return GoogleDrive(gauth)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        json.loads(st.secrets["SERVICE_ACCOUNT"]),
+        ["https://www.googleapis.com/auth/drive"]
+    )
+    return GoogleDrive(creds)
 
 
 def upload_to_drive(file_path, folder_id=FOLDER_ID):

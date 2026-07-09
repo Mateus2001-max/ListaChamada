@@ -20,6 +20,7 @@ FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        st.write(type(st.secrets["SERVICE_ACCOUNT"]))
         json.loads(st.secrets["SERVICE_ACCOUNT"]),
         ["https://www.googleapis.com/auth/drive"]
     )

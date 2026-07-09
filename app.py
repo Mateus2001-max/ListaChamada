@@ -24,7 +24,7 @@ def autenticar_drive():
     info = dict(st.secrets["SERVICE_ACCOUNT"])
 
     for k, v in info.items():
-        st.write(k, type(v))
+        st.write(k, str(type(v)))
 
     credentials = Credentials.from_service_account_info(
         info,

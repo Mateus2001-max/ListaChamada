@@ -53,7 +53,7 @@ def arquivo_existe_no_drive(nome_arquivo, folder_id=FOLDER_ID):
     return len(resultado.get("files", [])) > 0
 
 # 🔹 Botão de teste para upload simples
-if st.sidebar.button("📤 Testar upload com test.txt"):
+if st.sidebar.button("📤 Testar upload com teste.txt"):
     if os.path.exists("teste.txt"):
         try:
             upload_to_drive("teste.txt")

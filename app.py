@@ -9,8 +9,6 @@ from openpyxl.styles import Alignment, Border, Side, Font
 from openpyxl.utils import get_column_letter
 from openpyxl.drawing.image import Image
 from menu import gerar_relatorio_historico
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload

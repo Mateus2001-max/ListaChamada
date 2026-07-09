@@ -51,7 +51,14 @@ def arquivo_existe_no_drive(nome_arquivo, folder_id=FOLDER_ID):
         fields="files(id,name)"
     ).execute()
     return len(resultado.get("files", [])) > 0
-
+def listar_arquivos_drive(folder_id=FOLDER_ID):
+    service = autenticar_drive()
+    results = service.files().list(
+        q=f"'{folder_id}' in parents and trashed=false",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get("files", [])
+    st.write("📂 Arquivos na pasta:", files)
 # 🔹 Botão de teste para upload simples
 if st.sidebar.button("📤 Testar upload com teste.txt"):
     if os.path.exists("teste.txt"):

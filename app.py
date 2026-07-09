@@ -20,6 +20,8 @@ import json
 FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
+    st.write(repr(st.secrets["SERVICE_ACCOUNT"]["private_key"]))
+
     scopes = ["https://www.googleapis.com/auth/drive"]
 
     credentials = Credentials.from_service_account_info(
@@ -29,7 +31,6 @@ def autenticar_drive():
 
     gauth = GoogleAuth()
     gauth.credentials = credentials
-
     return GoogleDrive(gauth)
 
 

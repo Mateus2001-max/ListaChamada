@@ -9,9 +9,40 @@ from openpyxl.styles import Alignment, Border, Side, Font
 from openpyxl.utils import get_column_letter
 from openpyxl.drawing.image import Image
 from menu import gerar_relatorio_historico
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+from pydrive2.auth import ServiceAccountCredentials
+from oauth2client.client import OAuth2Credentials
+import json
+
+# 🔹 Configuração do Google Drive
+FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
+
+def autenticar_drive():
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        json.loads(st.secrets["SERVICE_ACCOUNT"]),
+        ["https://www.googleapis.com/auth/drive"]
+    )
+    return GoogleDrive(creds)
 
 
+def upload_to_drive(file_path, folder_id=FOLDER_ID):
+    drive = autenticar_drive()
+    file = drive.CreateFile({
+        'title': file_path.split('/')[-1],
+        'parents': [{'id': folder_id}]
+    })
+    file.SetContentFile(file_path)
+    file.Upload()
+    print(f"✅ Arquivo enviado para Google Drive: {file['title']}")
 
+def arquivo_existe_no_drive(nome_arquivo, folder_id=FOLDER_ID):
+    drive = autenticar_drive()
+    query = f"title='{nome_arquivo}' and '{folder_id}' in parents and trashed=false"
+    arquivos = drive.ListFile({'q': query}).GetList()
+    return len(arquivos) > 0
+
+# 🔹 Função principal de presença
 def lista_presenca(alunos):
     st.title("📋 Lista de Presença")
 
@@ -42,7 +73,8 @@ def lista_presenca(alunos):
         num_rows="dynamic",
         key="tabela_presenca"
     )
-    # 🔹 Botão para salvar alterações
+
+    # Botão para salvar alterações
     if st.button("💾 Salvar Alterações"):
         conn = sqlite3.connect("escola.db")
         cursor = conn.cursor()
@@ -63,7 +95,7 @@ def lista_presenca(alunos):
         conn.close()
         st.success("✅ Alterações salvas com sucesso!")
 
-    # 🔹 Botão para excluir alunos removidos
+    # Botão para excluir alunos removidos
     if st.button("🗑️ Remover alunos excluídos"):
         conn = sqlite3.connect("escola.db")
         cursor = conn.cursor()
@@ -103,24 +135,23 @@ def lista_presenca(alunos):
     }])
     df_final = pd.concat([df_download, resumo], ignore_index=True)
 
-    # Converter para Excel em memória com formatação e cabeçalho
+    # Converter para Excel em memória
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df_final.to_excel(writer, index=False, sheet_name="Presenca", startrow=6)
         ws = writer.book["Presenca"]
 
-        # Inserir logotipo (ajuste o nome do arquivo conforme sua pasta)
+        # Inserir logotipo
         logo = Image("logo.png")
         logo.width = 120
         logo.height = 120
         ws.add_image(logo, "A1")
 
-        # Cabeçalho de texto
+        # Cabeçalho
         ws.merge_cells("C1:E1")
         ws.merge_cells("C2:E2")
         ws.merge_cells("C3:E3")
         ws.merge_cells("C4:E4")
-        
 
         ws["C1"] = "A...G...D...G...A...D...U..."
         ws["C2"] = "ESP... LOJ... SIMB... TERCEIRO MILÊNIO Nº 2.825"
@@ -129,13 +160,13 @@ def lista_presenca(alunos):
         ws["C6"] = f"Data: {date.today().strftime('%d/%m/%Y')}"
         ws["C6"].alignment = Alignment(horizontal="center", vertical="center")
         ws["C6"].font = Font(bold=True, size=11)
-        
+
         for row in range(1, 5):
             cell = ws[f"C{row}"]
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.font = Font(bold=True, size=12)
 
-        # Bordas finas
+        # Bordas
         thin_border = Border(left=Side(style="thin"), right=Side(style="thin"),
                              top=Side(style="thin"), bottom=Side(style="thin"))
 
@@ -144,7 +175,7 @@ def lista_presenca(alunos):
                 cell.border = thin_border
                 cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Ajustar largura automática
+        # Ajustar largura
         for col in ws.columns:
             max_length = 0
             col_letter = get_column_letter(col[0].column)
@@ -161,18 +192,22 @@ def lista_presenca(alunos):
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# 🔹 Chamada automática ao iniciar o app
+# 🔹 Automático: cria e envia relatório de ontem
 ontem = (date.today() - timedelta(days=1)).isoformat()
-arquivo_excel = f"Relatorios/presenca_{ontem}.xlsx"
+arquivo_excel = f"presenca_{ontem}.xlsx"
+caminho_local = f"Relatorios/{arquivo_excel}"
 
-if not os.path.exists(arquivo_excel):
+if not os.path.exists(caminho_local):
     gerar_relatorio_historico()
-    #st.info(f"📂")
-    st.info(f"📂")
+    upload_to_drive(caminho_local)
+    st.success(f"📂 Relatório de ontem criado e enviado para o Google Drive: {arquivo_excel}")
 else:
-    #st.info(f"📂 Relatório histórico de ontem já existe: {arquivo_excel}")
-    st.info(f"📂")
-    
+    if arquivo_existe_no_drive(arquivo_excel):
+        st.info(f"📂 Relatório de ontem já está no Google Drive: {arquivo_excel}")
+    else:
+        upload_to_drive(caminho_local)
+        st.success(f"📂 Relatório de ontem enviado para o Google Drive: {arquivo_excel}")
+
 # Chamada da função
 ger = GerenciadorAlunos()
 alunos = ger.listar()
@@ -181,5 +216,4 @@ if alunos:
     lista_presenca(alunos)
 else:
     st.warning("Nenhum aluno cadastrado no banco de dados.")
-
 

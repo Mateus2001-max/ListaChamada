@@ -2,6 +2,7 @@ streamlit
 pandas
 openpyxl
 python-docx
-pydrive2
 google-auth
-cryptography>=45.0.0
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib

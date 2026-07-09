@@ -15,7 +15,8 @@ from google.oauth2.service_account import Credentials
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 import json
-
+import sys
+st.write(sys.version)
 # 🔹 Configuração do Google Drive
 FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 

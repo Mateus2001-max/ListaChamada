@@ -21,7 +21,7 @@ FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
     credentials = Credentials.from_service_account_info(
-        dict(st.secrets["SERVICE_ACCOUNT"]),
+        json.loads(st.secrets["SERVICE_ACCOUNT"]),
         scopes=["https://www.googleapis.com/auth/drive"]
     )
 

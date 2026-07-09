@@ -13,7 +13,6 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from pydrive2.auth import ServiceAccountCredentials
 from oauth2client.client import OAuth2Credentials
-from google.oauth2.service_account import Credentials
 import json
 
 # 🔹 Configuração do Google Drive

@@ -37,7 +37,7 @@ def upload_to_drive(file_path, folder_id=FOLDER_ID):
 
     media = MediaFileUpload(
         file_path,
-        resumable=True
+        resumable=False
     )
 
     arquivo = service.files().create(

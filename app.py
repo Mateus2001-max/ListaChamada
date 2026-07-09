@@ -21,13 +21,14 @@ st.write(sys.version)
 FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
-    st.write(repr(st.secrets["SERVICE_ACCOUNT"]["private_key"]))
+    info = dict(st.secrets["SERVICE_ACCOUNT"])
 
-    scopes = ["https://www.googleapis.com/auth/drive"]
+    for k, v in info.items():
+        st.write(k, type(v))
 
     credentials = Credentials.from_service_account_info(
-        dict(st.secrets["SERVICE_ACCOUNT"]),
-        scopes=scopes
+        info,
+        scopes=["https://www.googleapis.com/auth/drive"]
     )
 
     gauth = GoogleAuth()

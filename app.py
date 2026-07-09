@@ -69,7 +69,18 @@ if st.sidebar.button("📤 Testar upload com teste.txt"):
             st.error(f"❌ Erro no upload: {e}")
     else:
         st.error("❌ O arquivo teste.txt não existe no diretório do app.")
-
+# 🔹 Botão para listar arquivos da pasta
+if st.sidebar.button("📂 Listar arquivos da pasta"):
+    try:
+        arquivos = listar_arquivos_drive()
+        if arquivos:
+            st.write("Arquivos encontrados na pasta:")
+            for arq in arquivos:
+                st.write(f"- {arq['name']} (ID: {arq['id']})")
+        else:
+            st.info("📂 Nenhum arquivo encontrado na pasta.")
+    except Exception as e:
+        st.error(f"❌ Erro ao listar arquivos: {e}")
 # 🔹 Função principal de presença
 def lista_presenca(alunos):
     st.title("📋 Lista de Presença")

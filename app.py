@@ -12,45 +12,59 @@ from menu import gerar_relatorio_historico
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from google.oauth2.service_account import Credentials
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 import json
 
 # 🔹 Configuração do Google Drive
 FOLDER_ID = "1kNMGdts9a9gCKY8zQ909_pQCNW-YR3yj"
 
 def autenticar_drive():
-    info = dict(st.secrets["SERVICE_ACCOUNT"])
-
-    for k, v in info.items():
-        st.write(k, str(type(v)))
-
     credentials = Credentials.from_service_account_info(
-        info,
+        dict(st.secrets["SERVICE_ACCOUNT"]),
         scopes=["https://www.googleapis.com/auth/drive"]
     )
 
-    gauth = GoogleAuth()
-    gauth.credentials = credentials
-    return GoogleDrive(gauth)
+    service = build("drive", "v3", credentials=credentials)
 
-
+    return service
 
 def upload_to_drive(file_path, folder_id=FOLDER_ID):
-    drive = autenticar_drive()
-    file = drive.CreateFile({
-        'title': file_path.split('/')[-1],
-        'parents': [{'id': folder_id}]
-    })
-    file.SetContentFile(file_path)
-    file.Upload()
-    print(f"✅ Arquivo enviado para Google Drive: {file['title']}")
+    service = autenticar_drive()
 
+    file_metadata = {
+        "name": os.path.basename(file_path),
+        "parents": [folder_id]
+    }
+
+    media = MediaFileUpload(
+        file_path,
+        resumable=True
+    )
+
+    arquivo = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id,name"
+    ).execute()
+
+    print(f"✅ Arquivo enviado: {arquivo['name']}")
+    
 def arquivo_existe_no_drive(nome_arquivo, folder_id=FOLDER_ID):
-    drive = autenticar_drive()
-    query = f"title='{nome_arquivo}' and '{folder_id}' in parents and trashed=false"
-    arquivos = drive.ListFile({'q': query}).GetList()
-    return len(arquivos) > 0
+    service = autenticar_drive()
+
+    query = (
+        f"name='{nome_arquivo}' and "
+        f"'{folder_id}' in parents and "
+        f"trashed=false"
+    )
+
+    resultado = service.files().list(
+        q=query,
+        fields="files(id,name)"
+    ).execute()
+
+    return len(resultado.get("files", [])) > 0
 
 # 🔹 Função principal de presença
 def lista_presenca(alunos):

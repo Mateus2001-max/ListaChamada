@@ -4,3 +4,4 @@ openpyxl
 python-docx
 pydrive2
 google-auth
+cryptography>=45.0.0

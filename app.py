@@ -23,6 +23,7 @@ def autenticar_drive():
         st.secrets["SERVICE_ACCOUNT"],  # já é dict
         scopes=["https://www.googleapis.com/auth/drive"]
     )
+    media = MediaFileUpload(caminho_local, resumable=False)
     service = build("drive", "v3", credentials=credentials)
     return service
 
